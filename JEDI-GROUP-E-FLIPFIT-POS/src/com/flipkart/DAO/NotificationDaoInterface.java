@@ -3,20 +3,13 @@ package com.flipkart.DAO;
 import com.flipkart.bean.Notification;
 import java.util.List;
 
+/**
+ * NotificationDaoInterface - Notification data access operations
+ * Activity: "Send rejection notification", "Promotion Notification", "Generate Success Notification"
+ */
 public interface NotificationDaoInterface {
-    
-    // Create a new notification
-    boolean createNotification(Notification notification);
-    
-    // Retrieve a notification by ID
-    Notification getNotificationById(Long notificationID);
-    
-    // Retrieve all notifications
-    List<Notification> getAllNotifications();
-    
-    // Update an existing notification
-   
-    
-    // Delete a notification by ID
-    boolean deleteNotification(Long notificationID);
+    void createNotification(Notification notification);
+    List<Notification> getNotificationsByUser(Long userId);
+    List<Notification> getUnreadNotificationsByUser(Long userId);
+    void markAsRead(Long notificationId);
 }

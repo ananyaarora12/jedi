@@ -1,26 +1,27 @@
 package com.flipkart.bean;
 
 import com.flipkart.utils.BookingStatusType;
-
 import java.sql.Date;
+import java.sql.Timestamp;
 
-
+/**
+ * BookSlot Bean - Represents a booking made by a customer
+ * 
+ * From Activity Diagram (Customer):
+ * - "Create Booking Record & Decrement Seat Count"
+ * - "Delete Booking & Increment Seat Count" on cancellation
+ * - "Change status from Waitlisted to Confirmed" on promotion
+ */
 public class BookSlot {
+    
     private Long bookingId;
     private Long customerId;
     private Long slotId;
-    private Date slotBookingDate;
+    private Date slotDate;              // Date of the slot
+    private BookingStatusType bookingStatus;  // CONFIRMED, CANCELLED, WAITLISTED
+    private Timestamp bookedAt;         // When booking was made
 
-    public java.sql.Date getSlotBookingDate() {
-        return slotBookingDate;
-    }
-
-    public void setSlotBookingDate(Date slotBookingDate) {
-        this.slotBookingDate = slotBookingDate;
-    }
-
-    private Date bookingDate;
-    private BookingStatusType bookingStatus;
+    // ==================== GETTERS & SETTERS ====================
 
     public Long getBookingId() {
         return bookingId;
@@ -46,12 +47,12 @@ public class BookSlot {
         this.slotId = slotId;
     }
 
-    public Date getBookingDate() {
-        return bookingDate;
+    public Date getSlotDate() {
+        return slotDate;
     }
 
-    public void setBookingDate(Date bookingDate) {
-        this.bookingDate = bookingDate;
+    public void setSlotDate(Date slotDate) {
+        this.slotDate = slotDate;
     }
 
     public BookingStatusType getBookingStatus() {
@@ -61,4 +62,18 @@ public class BookSlot {
     public void setBookingStatus(BookingStatusType bookingStatus) {
         this.bookingStatus = bookingStatus;
     }
+
+    public Timestamp getBookedAt() {
+        return bookedAt;
+    }
+
+    public void setBookedAt(Timestamp bookedAt) {
+        this.bookedAt = bookedAt;
+    }
+    
+    // Backward compatibility
+    public Date getSlotBookingDate() { return this.slotDate; }
+    public void setSlotBookingDate(Date date) { this.slotDate = date; }
+    public Date getBookingDate() { return this.slotDate; }
+    public void setBookingDate(Date date) { this.slotDate = date; }
 }

@@ -1,87 +1,90 @@
 package com.flipkart.DAO;
 
 import com.flipkart.bean.Notification;
+import com.flipkart.constants.Constants;
 import com.flipkart.utils.DB_utils;
-import com.flipkart.utils.DB_utils.*;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * NotificationDao - Implementation of NotificationDaoInterface
+ * Activity: "Send rejection notification", "Promotion Notification", "Generate Success Notification"
+ */
 public class NotificationDao implements NotificationDaoInterface {
-    
-  
 
     @Override
-    public boolean createNotification(Notification notification) {
-        String query = "INSERT INTO notification (senderID, receiverID, message) VALUES (?, ?, ?)";
-        try (Connection connection = DB_utils.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setLong(1, notification.getSenderID());
-            preparedStatement.setLong(2, notification.getReceiverID());
-            preparedStatement.setString(3, notification.getMessage());
-            return preparedStatement.executeUpdate() > 0;
+    public void createNotification(Notification notification) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.ADD_NOTIFICATION);
+            stmt.setLong(1, notification.getUserId());
+            stmt.setString(2, notification.getMessage());
+            stmt.setString(3, notification.getType());
+            stmt.setTimestamp(4, notification.getCreatedAt());
+            stmt.executeUpdate();
+            stmt.close();
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error creating notification: " + e.getMessage());
         }
-        return false;
-    }
-    
-
-    @Override
-    public Notification getNotificationById(Long notificationID) {
-        String query = "SELECT * FROM notification WHERE notificationID = ?";
-        try (Connection connection = DB_utils.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setLong(1, notificationID);
-            try (ResultSet resultSet = preparedStatement.executeQuery()) {
-                if (resultSet.next()) {
-                    return mapRowToNotification(resultSet);
-                }
-            }
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-        }
-        return null;
     }
 
     @Override
-    public List<Notification> getAllNotifications() {
-        String query = "SELECT * FROM notification";
+    public List<Notification> getNotificationsByUser(Long userId) {
         List<Notification> notifications = new ArrayList<>();
-        try (Connection connection = DB_utils.getConnection();
-             Statement statement = connection.createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
-            while (resultSet.next()) {
-                notifications.add(mapRowToNotification(resultSet));
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_NOTIFICATIONS_BY_USER);
+            stmt.setLong(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                notifications.add(mapResultSet(rs));
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
         return notifications;
     }
 
-   
-
     @Override
-    public boolean deleteNotification(Long notificationID) {
-        String query = "DELETE FROM notification WHERE notificationID = ?";
-        try (Connection connection = DB_utils.getConnection();
-             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setLong(1, notificationID);
-            return preparedStatement.executeUpdate() > 0;
+    public List<Notification> getUnreadNotificationsByUser(Long userId) {
+        List<Notification> notifications = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_UNREAD_NOTIFICATIONS);
+            stmt.setLong(1, userId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                notifications.add(mapResultSet(rs));
+            }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
-        return false;
+        return notifications;
     }
 
-    private Notification mapRowToNotification(ResultSet resultSet) throws Exception {
+    @Override
+    public void markAsRead(Long notificationId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.MARK_NOTIFICATION_READ);
+            stmt.setLong(1, notificationId);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    private Notification mapResultSet(ResultSet rs) throws Exception {
         Notification notification = new Notification();
-        notification.setNotificationID(resultSet.getLong("notificationID"));
-        notification.setSenderID(resultSet.getLong("senderID"));
-        notification.setReceiverID(resultSet.getLong("receiverID"));
-        notification.setMessage(resultSet.getString("message"));
+        notification.setNotificationId(rs.getLong("notification_id"));
+        notification.setUserId(rs.getLong("user_id"));
+        notification.setMessage(rs.getString("message"));
+        notification.setType(rs.getString("type"));
+        notification.setRead(rs.getBoolean("is_read"));
+        notification.setCreatedAt(rs.getTimestamp("created_at"));
         return notification;
     }
 }

@@ -1,195 +1,360 @@
 package com.flipkart.client;
 
-import com.flipkart.DAO.AdminDao;
-import java.time.*;
-import java.time.format.DateTimeFormatter;
-
-import com.flipkart.DAO.AdminDaoInterface;
 import com.flipkart.business.AdminOperation;
 import com.flipkart.bean.GymAdmin;
 import com.flipkart.bean.GymCenter;
 import com.flipkart.bean.GymOwner;
 import com.flipkart.exceptions.UserNotFoundException;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * GymAdminMenu - Admin interface
+ * 
+ * From Activity Diagram (Admin):
+ * - "Log in to FlipFit Admin" -> "Authenticate Credentials"
+ * - "View Pending Centers" -> "Fetch Gym Owner Requests"
+ * - "Approve?" -> [YES] "Save Center & Slot Info" / [NO] "Delete Centre"
+ * - "Send rejection notification"
+ */
 public class GymAdminMenu {
+    
     private AdminOperation adminOperation = new AdminOperation();
-    private AdminDaoInterface adminDao = new AdminDao();
-    private Scanner in = new Scanner(System.in);
+    private Scanner scanner = new Scanner(System.in);
 
+    /**
+     * Admin Login
+     * Activity: "Log in to FlipFit Admin" -> "Authenticate Credentials"
+     */
     public boolean adminLogin(String email, String password) throws UserNotFoundException {
         if (adminOperation.validUser(email, password)) {
-            System.out.println("Welcome " + email);
-            System.out.println("Successfully logged in");
+            System.out.println("\n✓ Login successful!");
             GymAdmin admin = adminOperation.getAdminByEmail(email);
-            AdminMainPage(admin.getAdminName());
+            adminMainPage(admin.getAdminName());
+            return true;
         } else {
-            System.out.println("Invalid username or password");
+            System.out.println("Invalid email or password!");
             return false;
         }
-        return true;
     }
 
+    /**
+     * Admin Registration
+     */
     public boolean adminRegister() {
-        System.out.println("Enter your Username");
-        String userName = in.next();
+        System.out.println("\n----- Admin Registration -----");
+        
+        System.out.print("Enter name: ");
+        String name = scanner.nextLine();
 
-        System.out.println("Enter your Password");
-        String password = in.next();
+        System.out.print("Enter email: ");
+        String email = scanner.nextLine();
 
-        System.out.println("Enter your Email");
-        String email = in.next();
+        System.out.print("Enter password: ");
+        String password = scanner.nextLine();
 
-        System.out.println("Enter your Phone");
-        String phone = in.next();
+        System.out.print("Enter phone: ");
+        String phone = scanner.nextLine();
 
-        adminOperation.createAdmin(userName, password, email, phone);
-        System.out.println("Admin added successfully!");
-
+        adminOperation.createAdmin(name, email, phone, password);
+        System.out.println("✓ Admin registered successfully!\n");
         return true;
     }
 
-    public void approveGymOwner() {
-        System.out.println("Enter the owner Id: ");
-        Long owner_Id = in.nextLong();
-        adminOperation.approveGymOwner(owner_Id);
-    }
-
-    public void approveGymCentre() {
-        System.out.println("Enter the gym Id: ");
-        Long gymId = in.nextLong();
-        adminOperation.approveGymCenter(gymId);
-        System.out.println("Gym added successfully !");
-    }
-
-    public void viewPendingCenters() {
-        List<GymCenter> gymDetails = adminOperation.viewPendingGymCentres();
+    /**
+     * Admin Main Menu
+     * Activity: After successful login, admin can view/approve/reject
+     */
+    public void adminMainPage(String username) {
+        LocalDateTime now = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
         
-        System.out.println("--------------------------------------------------------");
-        System.out.printf("%-16s %-13s %-16s %-16s %n", "Gym Id", "Name", "Email", "Approved");
-        System.out.println("--------------------------------------------------------");
+        System.out.println("\n========================================");
+        printLoginHeader("Welcome, Admin " + username, "Login time: " + now.format(formatter));
+        System.out.println("========================================");
 
-        for (GymCenter gym : gymDetails) {
-            System.out.printf("%-16s %-16s %-16s %-16s %n",
-                    gym.getId(), gym.getName(), gym.getEmail(), gym.isIs_approved() ? "Yes" : "No");
-        }
-        System.out.println("--------------------------------------------------------");
-    }
+        while (true) {
+            System.out.println("\n----- Admin Menu -----");
+            System.out.println("1. View Pending Gym Owners");
+            System.out.println("2. View Pending Gym Centers");
+            System.out.println("3. View Approved Gym Owners");
+            System.out.println("4. View Approved Gym Centers");
+            System.out.println("5. Filter Gym Owners (Approved/Not Approved)");
+            System.out.println("6. Filter Gym Centers (Approved/Not Approved)");
+            System.out.println("7. Approve Gym Owner");
+            System.out.println("8. Reject Gym Owner");
+            System.out.println("9. Approve Gym Center");
+            System.out.println("10. Reject Gym Center");
+            System.out.println("11. Logout");
+            System.out.print("Enter choice: ");
 
-    public void viewPendingGymOwners() {
-        List<GymOwner> gymOwnerDetails = adminOperation.viewPendingGymOwners();
-
-        System.out.printf("%-19s %-13s %-24s %-17s %n", "Email", "Name", "PAN Number", "Approved");
-        for (GymOwner owner : gymOwnerDetails) {
-            System.out.printf("%-19s %-13s %-24s %-17s %n",
-                    owner.getOwnerEmailAddress(), owner.getOwnerName(), owner.getOwnerPanNum(),
-                    owner.isApproved() ? "Yes" : "No");
-        }
-        System.out.println("**********************************");
-    }
-    
-    public void viewApprovedCenters() {
-        List<GymCenter> gymDetails = adminOperation.viewApprovedGymCentres();
-        
-        System.out.println("--------------------------------------------------------");
-        System.out.printf("%-16s %-13s %-16s %-16s %n", "Gym Id", "Name", "Email", "Approved");
-        System.out.println("--------------------------------------------------------");
-
-        for (GymCenter gym : gymDetails) {
-            System.out.printf("%-16s %-16s %-16s %-16s %n",
-                    gym.getId(), gym.getName(), gym.getEmail(), gym.isIs_approved() ? "Yes" : "No");
-        }
-        System.out.println("--------------------------------------------------------");
-    }
-
-    public void viewApprovedGymOwners() {
-        List<GymOwner> gymOwnerDetails = adminOperation.viewApprovedGymOwners();
-
-        System.out.printf("%-19s %-13s %-24s %-17s %n", "Email", "Name", "PAN Number", "Approved");
-        for (GymOwner owner : gymOwnerDetails) {
-            System.out.printf("%-19s %-13s %-24s %-17s %n",
-                    owner.getOwnerEmailAddress(), owner.getOwnerName(), owner.getOwnerPanNum(),
-                    owner.isApproved() ? "Yes" : "No");
-        }
-        System.out.println("**********************************");
-    }
-    
-
-    public void AdminMainPage(String username) {
-    	LocalDateTime myObj = LocalDateTime.now();
-    	DateTimeFormatter myFormatObj = DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss");
-
-        String formattedDate = myObj.format(myFormatObj);
-    	System.out.println("You logged in at: "+formattedDate);
-        System.out.println("Welcome " + username + ", Please Choose Your Option");
-        boolean exit = false;
-
-        while (!exit) {
-            System.out.println("1. View All Pending Gym Owners");
-            System.out.println("2. View All Pending Gym Centres");
-            System.out.println("3. View All Approved Gym Owners");
-            System.out.println("4. View All Approved Gym Centres");
-            System.out.println("5. Approve Gym Owner");
-            System.out.println("6. Approve Gym Centre");
-            System.out.println("7. Edit Admin Profile");
-            System.out.println("8. Exit");
-            System.out.print("Enter number: ");
-
-            int choice = in.nextInt();
-            in.nextLine(); // Consume newline
+            int choice = scanner.nextInt();
+            scanner.nextLine();
 
             switch (choice) {
-                case 1 -> viewPendingGymOwners();
-                case 2 -> viewPendingCenters();
-                case 3 -> viewApprovedGymOwners();
-                case 4 -> viewApprovedCenters();
-                case 5 -> approveGymOwner();
-                case 6 -> approveGymCentre();
-                case 7 -> editAdminProfile();
-                case 8 -> {
-                    System.out.println("Exiting...");
-                    exit = true;
-                }
-                default -> System.out.println("Invalid option, please try again.");
+                case 1:
+                    viewPendingGymOwners();
+                    break;
+                case 2:
+                    viewPendingCenters();
+                    break;
+                case 3:
+                    viewApprovedGymOwners();
+                    break;
+                case 4:
+                    viewApprovedCenters();
+                    break;
+                case 5:
+                    filterGymOwners();
+                    break;
+                case 6:
+                    filterGymCenters();
+                    break;
+                case 7:
+                    approveGymOwner();
+                    break;
+                case 8:
+                    rejectGymOwner();
+                    break;
+                case 9:
+                    approveGymCenter();
+                    break;
+                case 10:
+                    rejectGymCenter();
+                    break;
+                case 11:
+                    System.out.println("Logging out...\n");
+                    return;
+                default:
+                    System.out.println("Invalid option!");
             }
         }
     }
 
-    public void editAdminProfile() {
-        GymAdmin admin = new GymAdmin();
+    /**
+     * View Pending Gym Owners
+     * Activity: "Fetch Gym Owner Requests"
+     */
+    private void viewPendingGymOwners() {
+        System.out.println("\n----- Pending Gym Owners -----");
+        List<GymOwner> owners = adminOperation.viewPendingGymOwners();
+        
+        if (owners == null || owners.isEmpty()) {
+            System.out.println("No pending gym owner requests.");
+            return;
+        }
+        
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-15s %-25s %-15s%n", "ID", "Name", "Email", "PAN");
+        System.out.println("------------------------------------------------------------");
+        
+        for (GymOwner owner : owners) {
+            System.out.printf("%-6d %-15s %-25s %-15s%n",
+                owner.getOwnerId(), owner.getOwnerName(), 
+                owner.getOwnerEmailAddress(), owner.getOwnerPanNum());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
 
-        System.out.println("1. Edit name");
-        System.out.println("2. Edit email address");
-        System.out.println("3. Edit phone");
+    /**
+     * View Pending Gym Centers
+     * Activity: "View Pending Centers"
+     */
+    private void viewPendingCenters() {
+        System.out.println("\n----- Pending Gym Centers -----");
+        List<GymCenter> centers = adminOperation.viewPendingGymCentres();
+        
+        if (centers == null || centers.isEmpty()) {
+            System.out.println("No pending gym center requests.");
+            return;
+        }
+        
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-20s %-15s %-15s%n", "ID", "Name", "City", "Status");
+        System.out.println("------------------------------------------------------------");
+        
+        for (GymCenter gym : centers) {
+            System.out.printf("%-6d %-20s %-15s %-15s%n",
+                gym.getId(), gym.getName(), gym.getCity(), gym.getStatus());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
 
-        int subOption = in.nextInt();
-        in.nextLine(); // Consume newline
+    /**
+     * View Approved Gym Owners
+     */
+    private void viewApprovedGymOwners() {
+        System.out.println("\n----- Approved Gym Owners -----");
+        List<GymOwner> owners = adminOperation.viewApprovedGymOwners();
+        
+        if (owners == null || owners.isEmpty()) {
+            System.out.println("No approved gym owners.");
+            return;
+        }
+        
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-15s %-25s %-15s%n", "ID", "Name", "Email", "PAN");
+        System.out.println("------------------------------------------------------------");
+        
+        for (GymOwner owner : owners) {
+            System.out.printf("%-6d %-15s %-25s %-15s%n",
+                owner.getOwnerId(), owner.getOwnerName(), 
+                owner.getOwnerEmailAddress(), owner.getOwnerPanNum());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
 
-        switch (subOption) {
-            case 1:
-                System.out.print("Enter new name: ");
-                admin.setAdminName(in.nextLine());
-                System.out.println("Name changed successfully.");
-                break;
-            case 2:
-                System.out.print("Enter new email address: ");
-                admin.setAdminEmailAddress(in.nextLine());
-                System.out.println("Email changed successfully.");
-                break;
-            case 3:
-                System.out.print("Enter new phone number: ");
-                admin.setPhone(in.nextLine());
-                System.out.println("Contact number changed successfully.");
-                break;
-            default:
-                System.out.println("Invalid choice.");
+    /**
+     * View Approved Gym Centers
+     */
+    private void viewApprovedCenters() {
+        System.out.println("\n----- Approved Gym Centers -----");
+        List<GymCenter> centers = adminOperation.viewApprovedGymCentres();
+        
+        if (centers == null || centers.isEmpty()) {
+            System.out.println("No approved gym centers.");
+            return;
+        }
+        
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-20s %-15s %-15s%n", "ID", "Name", "City", "Status");
+        System.out.println("------------------------------------------------------------");
+        
+        for (GymCenter gym : centers) {
+            System.out.printf("%-6d %-20s %-15s %-15s%n",
+                gym.getId(), gym.getName(), gym.getCity(), gym.getStatus());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
+
+    private void filterGymOwners() {
+        System.out.print("Show approved owners only? (y/n): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+        boolean approvedOnly = input.equals("y") || input.equals("yes");
+        List<GymOwner> owners = adminOperation.filterGymOwnersByApproval(approvedOnly);
+        if (approvedOnly) {
+            System.out.println("\n----- Approved Gym Owners (Stream Filter) -----");
+        } else {
+            System.out.println("\n----- Not Approved Gym Owners (Stream Filter) -----");
+        }
+        displayGymOwners(owners);
+    }
+
+    private void filterGymCenters() {
+        System.out.print("Show approved centers only? (y/n): ");
+        String input = scanner.nextLine().trim().toLowerCase();
+        boolean approvedOnly = input.equals("y") || input.equals("yes");
+        List<GymCenter> centers = adminOperation.filterGymCentersByApproval(approvedOnly);
+        if (approvedOnly) {
+            System.out.println("\n----- Approved Gym Centers (Stream Filter) -----");
+        } else {
+            System.out.println("\n----- Not Approved Gym Centers (Stream Filter) -----");
+        }
+        displayGymCenters(centers);
+    }
+
+    /**
+     * Approve Gym Owner
+     */
+    private void approveGymOwner() {
+        viewPendingGymOwners();
+        System.out.print("Enter Owner ID to approve: ");
+        Long ownerId = scanner.nextLong();
+        scanner.nextLine();
+        
+        if (adminOperation.approveGymOwner(ownerId)) {
+            System.out.println("✓ Gym Owner approved successfully!");
+        } else {
+            System.out.println("✗ Failed to approve gym owner.");
         }
     }
 
-    public static void main(String[] args) {
-        GymAdminMenu adminMenu = new GymAdminMenu();
-        adminMenu.AdminMainPage("Admin");
+    /**
+     * Reject Gym Owner
+     */
+    private void rejectGymOwner() {
+        viewPendingGymOwners();
+        System.out.print("Enter Owner ID to reject: ");
+        Long ownerId = scanner.nextLong();
+        scanner.nextLine();
+        
+        if (adminOperation.rejectGymOwner(ownerId)) {
+            System.out.println("✓ Gym Owner rejected. Notification sent.");
+        } else {
+            System.out.println("✗ Failed to reject gym owner.");
+        }
+    }
+
+    /**
+     * Approve Gym Center
+     * Activity: "Approve?" -> [YES] -> "Save Center & Slot Info"
+     */
+    private void approveGymCenter() {
+        viewPendingCenters();
+        System.out.print("Enter Center ID to approve: ");
+        Long centerId = scanner.nextLong();
+        scanner.nextLine();
+        
+        if (adminOperation.approveGymCenter(centerId)) {
+            System.out.println("✓ Gym Center approved successfully!");
+        } else {
+            System.out.println("✗ Failed to approve gym center.");
+        }
+    }
+
+    /**
+     * Reject Gym Center
+     * Activity: "Approve?" -> [NO] -> "Delete Centre" -> "Send rejection notification"
+     */
+    private void rejectGymCenter() {
+        viewPendingCenters();
+        System.out.print("Enter Center ID to reject: ");
+        Long centerId = scanner.nextLong();
+        scanner.nextLine();
+        
+        if (adminOperation.rejectGymCenter(centerId)) {
+            System.out.println("✓ Gym Center rejected. Notification sent to owner.");
+        } else {
+            System.out.println("✗ Failed to reject gym center.");
+        }
+    }
+
+    private void displayGymOwners(List<GymOwner> owners) {
+        if (owners == null || owners.isEmpty()) {
+            System.out.println("No gym owners found.");
+            return;
+        }
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-15s %-25s %-15s%n", "ID", "Name", "Email", "PAN");
+        System.out.println("------------------------------------------------------------");
+        for (GymOwner owner : owners) {
+            System.out.printf("%-6d %-15s %-25s %-15s%n",
+                owner.getOwnerId(), owner.getOwnerName(),
+                owner.getOwnerEmailAddress(), owner.getOwnerPanNum());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
+
+    private void displayGymCenters(List<GymCenter> centers) {
+        if (centers == null || centers.isEmpty()) {
+            System.out.println("No gym centers found.");
+            return;
+        }
+        System.out.println("------------------------------------------------------------");
+        System.out.printf("%-6s %-20s %-15s %-15s%n", "ID", "Name", "City", "Status");
+        System.out.println("------------------------------------------------------------");
+        for (GymCenter gym : centers) {
+            System.out.printf("%-6d %-20s %-15s %-15s%n",
+                gym.getId(), gym.getName(), gym.getCity(), gym.getStatus());
+        }
+        System.out.println("------------------------------------------------------------");
+    }
+
+    private void printLoginHeader(String left, String right) {
+        int width = 60;
+        System.out.println(String.format("%-" + width + "s%20s", left, right));
     }
 }

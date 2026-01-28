@@ -1,79 +1,88 @@
 package com.flipkart.bean;
 
+/**
+ * GymCenter Bean - Represents a gym center in the system
+ * 
+ * From Activity Diagram (GymOwner):
+ * - "Add a new centre (Location, Name, Capacity)"
+ * - "Submit gym details"
+ * 
+ * From Activity Diagram (Admin):
+ * - "View Pending Centers"
+ * - "Approve?" -> "Save Center & Slot Info" OR "Delete Centre"
+ * 
+ * From Activity Diagram (Customer):
+ * - "Select City" -> "Fetch Active Centers List"
+ */
 public class GymCenter {
-	private Long id;
-	private String name;
-	private String email;
-	private boolean is_approved;
-	private  String  location;
-	private Long gymOwnerId;
+    
+    private Long id;
+    private String name;
+    private String city;        // For "Select City" filter
+    private String location;    // Full address
+    private int capacity;       // From "Add a new centre (Location, Name, Capacity)"
+    private String status;      // PENDING, APPROVED, REJECTED
+    private Long gymOwnerId;    // Foreign key to GymOwner
 
-	/**
-	 * @return the id
-	 */
-	public Long getId() {
-		return id;
-	}
-	/**
-	 * @param id the id to set
-	 */
-	public void setId(Long id) {
-		this.id = id;
-	}
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-	/**
-	 * @param name the name to set
-	 */
-	public void setName(String name) {
-		this.name = name;
-	}
-	/**
-	 * @return the email
-	 */
-	public String getEmail() {
-		return email;
-	}
-	/**
-	 * @param email the email to set
-	 */
-	public void setEmail(String email) {
-		this.email = email;
-	}
-	/**
-	 * @return the is_approved
-	 */
-	public boolean isIs_approved() {
-		return is_approved;
-	}
-	/**
-	 * @param is_approved the is_approved to set
-	 */
-	public void setIs_approved(boolean is_approved) {
-		this.is_approved = is_approved;
-	}
-	/**
-	 * @return the location
-	 */
-	public String getLocation() {
-		return location;
-	}
-	/**
-	 * @param location the location to set
-	 */
-	public void setLocation(String location) {
-		this.location = location;
-	}
+    // ==================== GETTERS & SETTERS ====================
 
-	public Long getGymOwnerId() {
-		return gymOwnerId;
-	}
+    public Long getId() {
+        return id;
+    }
 
-	public void setGymOwnerId(Long gymOwnerId) {
-		this.gymOwnerId = gymOwnerId;
-	}
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public int getCapacity() {
+        return capacity;
+    }
+
+    public void setCapacity(int capacity) {
+        this.capacity = capacity;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public Long getGymOwnerId() {
+        return gymOwnerId;
+    }
+
+    public void setGymOwnerId(Long gymOwnerId) {
+        this.gymOwnerId = gymOwnerId;
+    }
+    
+    public boolean isApproved() {
+        return "APPROVED".equalsIgnoreCase(this.status);
+    }
 }

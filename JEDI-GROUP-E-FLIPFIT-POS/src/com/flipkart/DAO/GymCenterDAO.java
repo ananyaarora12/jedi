@@ -7,55 +7,167 @@ import com.flipkart.utils.DB_utils;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class GymCenterDAO implements GymCenterDAOInterface{
+/**
+ * GymCenterDAO - Implementation of GymCenterDAOInterface
+ * Activity: "Add a new centre", "View Pending Centers", "Approve?", "Select City"
+ */
+public class GymCenterDAO implements GymCenterDAOInterface {
+
     @Override
     public void addGymCenter(GymCenter gymCenter) {
-        try{
+        try {
             Connection connection = DB_utils.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(Constants.INSERT_GYM);
-            stmt.setString(1,gymCenter.getName());
-            stmt.setString(2,gymCenter.getEmail());
-            stmt.setBoolean(3,gymCenter.isIs_approved());
-            stmt.setString(4,gymCenter.getLocation());
+            PreparedStatement stmt = connection.prepareStatement(Constants.ADD_GYM_CENTER);
+            stmt.setString(1, gymCenter.getName());
+            stmt.setString(2, gymCenter.getCity());
+            stmt.setString(3, gymCenter.getLocation());
+            stmt.setInt(4, gymCenter.getCapacity());
             stmt.setLong(5, gymCenter.getGymOwnerId());
             stmt.executeUpdate();
             stmt.close();
             System.out.println("Gym center added successfully");
-            return;
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error adding gym center: " + e.getMessage());
         }
-        System.out.println("Gym center failed");
     }
 
     @Override
-    public List<GymCenter> getAllGymCenters() {
-        try{
+    public GymCenter getGymCenterById(Long centerId) {
+        try {
             Connection connection = DB_utils.getConnection();
-            PreparedStatement stmt = connection.prepareStatement(Constants.FETCH_ALL_GYM_CENTERS);
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_GYM_CENTER_BY_ID);
+            stmt.setLong(1, centerId);
             ResultSet rs = stmt.executeQuery();
-            List<GymCenter> gymCenters = new ArrayList<>();
-            while(rs.next()){
-                GymCenter gymCenter = new GymCenter();
-                gymCenter.setId(rs.getLong(1));
-                gymCenter.setName(rs.getString(2));
-                gymCenter.setEmail(rs.getString(3));
-                gymCenter.setIs_approved(rs.getBoolean(4));
-                gymCenter.setLocation(rs.getString(5));
-                gymCenter.setGymOwnerId(rs.getLong(6));
-                gymCenters.add(gymCenter);
+            if (rs.next()) {
+                return mapResultSet(rs);
             }
-            System.out.println("Gym center list retrieved successfully");
-            return gymCenters;
-
         } catch (Exception e) {
-            System.out.println(e.getMessage());
+            System.out.println("Error: " + e.getMessage());
         }
-        System.out.println("Fetching gym center failed.");
-        return List.of();
+        return null;
+    }
+
+    @Override
+    public List<GymCenter> getAllApprovedGymCenters() {
+        List<GymCenter> gymCenters = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_ALL_APPROVED_GYM_CENTERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                gymCenters.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return gymCenters;
+    }
+
+    @Override
+    public List<GymCenter> getApprovedGymCentersByCity(String city) {
+        List<GymCenter> gymCenters = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_APPROVED_GYM_CENTERS_BY_CITY);
+            stmt.setString(1, city);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                gymCenters.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return gymCenters;
+    }
+
+    @Override
+    public List<GymCenter> getPendingGymCenters() {
+        List<GymCenter> gymCenters = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_PENDING_GYM_CENTERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                gymCenters.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return gymCenters;
+    }
+
+    @Override
+    public List<GymCenter> getGymCentersByOwner(Long ownerId) {
+        List<GymCenter> gymCenters = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_GYM_CENTERS_BY_OWNER);
+            stmt.setLong(1, ownerId);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                gymCenters.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return gymCenters;
+    }
+
+    @Override
+    public void approveGymCenter(Long centerId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.APPROVE_GYM_CENTER);
+            stmt.setLong(1, centerId);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void rejectGymCenter(Long centerId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.REJECT_GYM_CENTER);
+            stmt.setLong(1, centerId);
+            stmt.executeUpdate();
+            stmt.close();
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // Legacy method for backward compatibility
+    public List<GymCenter> getAllGymCenters() {
+        List<GymCenter> gymCenters = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(
+                "SELECT * FROM gym_center");
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                gymCenters.add(mapResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return gymCenters;
+    }
+
+    private GymCenter mapResultSet(ResultSet rs) throws Exception {
+        GymCenter gymCenter = new GymCenter();
+        gymCenter.setId(rs.getLong("center_id"));
+        gymCenter.setName(rs.getString("name"));
+        gymCenter.setCity(rs.getString("city"));
+        gymCenter.setLocation(rs.getString("location"));
+        gymCenter.setCapacity(rs.getInt("capacity"));
+        gymCenter.setStatus(rs.getString("status"));
+        gymCenter.setGymOwnerId(rs.getLong("owner_id"));
+        return gymCenter;
     }
 }

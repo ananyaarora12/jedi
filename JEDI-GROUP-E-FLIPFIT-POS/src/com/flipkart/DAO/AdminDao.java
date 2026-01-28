@@ -1,7 +1,6 @@
 package com.flipkart.DAO;
 
 import java.sql.Connection;
-
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -15,194 +14,236 @@ import com.flipkart.constants.Constants;
 import com.flipkart.utils.DB_utils;
 import com.flipkart.utils.UserRoleType;
 
+/**
+ * AdminDao - Implementation of AdminDaoInterface
+ * Activity: "Log in to FlipFit Admin", "View Pending Centers", "Approve?", "Delete Centre"
+ */
 public class AdminDao implements AdminDaoInterface {
-
-	Connection connection = null;
-    PreparedStatement statement = null;
 
     private UserDaoInterface userDao = new UserDao();
 
-    public List<GymCenter> viewPendingGymRequests(){
-        List<GymCenter> pendingReq = new ArrayList<>();
+    @Override
+    public void addAdmin(GymAdmin gymAdmin) {
         try {
-            connection = DB_utils.getConnection();
-            System.out.println("Getting Pending Requests...");
-            statement = connection.prepareStatement(Constants.FETCH_PENDING_GYM_CENTERS);
-            ResultSet rs = statement.executeQuery();
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.ADD_ADMIN);
+            stmt.setString(1, gymAdmin.getAdminName());
+            stmt.setString(2, gymAdmin.getAdminEmailAddress());
+            stmt.setString(3, gymAdmin.getPhone());
+            stmt.setString(4, gymAdmin.getPassword());
+            stmt.executeUpdate();
+            stmt.close();
 
-            while(rs.next()){
-                GymCenter gymCenter = new GymCenter();
-                gymCenter.setId(rs.getLong("center_id"));
-                gymCenter.setName(rs.getString("center_name"));
-                gymCenter.setEmail(rs.getString("center_email_id"));
-                gymCenter.setLocation(rs.getString("center_location"));
-                gymCenter.setIs_approved(false);
-                gymCenter.setGymOwnerId(rs.getLong("owner_id"));
-                pendingReq.add(gymCenter);
+            // Add to user_role table
+            GymAdmin saved = getAdminByEmail(gymAdmin.getAdminEmailAddress());
+            if (saved != null) {
+                UserRole userRole = new UserRole();
+                userRole.setUserId(saved.getAdminId());
+                userRole.setUserRole(UserRoleType.ADMIN);
+                userRole.setUserEmail(gymAdmin.getAdminEmailAddress());
+                userDao.addUserRole(userRole);
             }
-        } catch (Exception excep){
-            System.out.println(excep.getMessage());
+            System.out.println("Admin added successfully");
+        } catch (Exception e) {
+            System.out.println("Error adding admin: " + e.getMessage());
         }
-        return pendingReq;
-    }
-
-    public List<GymOwner> viewPendingGymOwnerRequests(){
-        List<GymOwner> pendingGymOwnerReq = new ArrayList<>();
-        try {
-            connection = DB_utils.getConnection();
-            statement = connection.prepareStatement(Constants.FETCH_PENDING_GYM_OWNERS);
-            ResultSet rs = statement.executeQuery();
-            while(rs.next()){
-                GymOwner gymOwner = new GymOwner();
-                gymOwner.setOwnerId(rs.getLong("owner_id"));
-                gymOwner.setOwnerAddress(rs.getString("owner_address"));
-                gymOwner.setApproved(false);
-                gymOwner.setOwnerPhone(rs.getString("owner_phone_no"));
-                gymOwner.setOwnerPanNum(rs.getString("owner_pan"));
-                gymOwner.setOwnerName(rs.getString("owner_name"));
-                gymOwner.setOwnerEmailAddress(rs.getString("owner_email_id"));              
-
-                pendingGymOwnerReq.add(gymOwner);
-            }
-        } catch(Exception excep) {
-            System.out.println(excep.getMessage());
-        }
-        return pendingGymOwnerReq;
-    }
-
-    public List<GymCenter> viewAllApprovedGyms(){
-        List<GymCenter> approvedReq = new ArrayList<>();
-        try {
-            connection = DB_utils.getConnection();
-            System.out.println("Getting Approved Requests...");
-            statement = connection.prepareStatement(Constants.FETCH_ALL_APPROVED_GYMS);
-            ResultSet rs = statement.executeQuery();
-
-            while(rs.next()){
-            	GymCenter gymCenter = new GymCenter();
-            	gymCenter.setId(rs.getLong("center_id"));
-                gymCenter.setName(rs.getString("center_name"));
-                gymCenter.setEmail(rs.getString("center_email_id"));
-                gymCenter.setLocation(rs.getString("center_location"));
-                gymCenter.setIs_approved(true);
-                gymCenter.setGymOwnerId(rs.getLong("owner_id"));
-                approvedReq.add(gymCenter);
-            }
-        } catch (Exception excep){
-            System.out.println(excep.getMessage());
-        }
-        return approvedReq;
-    }
-
-    public List<GymOwner> viewAllApprovedGymOnwers(){
-        List<GymOwner> approvedGymOwnerReq = new ArrayList<>();
-        try {
-            connection = DB_utils.getConnection();
-            System.out.println("Getting Approved Gym Owner Requests...");
-            statement = connection.prepareStatement(Constants.FETCH_PENDING_OR_APPROVED_GYM_OWNERS);
-            ResultSet rs = statement.executeQuery();
-            while(rs.next()){
-            	GymOwner gymOwner = new GymOwner();
-                gymOwner.setOwnerId(rs.getLong("owner_id"));
-                gymOwner.setOwnerAddress(rs.getString("owner_address"));
-                gymOwner.setApproved(true);
-                gymOwner.setOwnerPhone(rs.getString("owner_phone_no"));
-                gymOwner.setOwnerPanNum(rs.getString("owner_pan"));
-                gymOwner.setOwnerName(rs.getString("owner_name"));
-                gymOwner.setOwnerEmailAddress(rs.getString("owner_email_id"));              
-
-
-                approvedGymOwnerReq.add(gymOwner);
-            }
-        } catch(Exception excep) {
-            System.out.println(excep.getMessage());
-        }
-        return approvedGymOwnerReq;
-    }
-
-    public boolean approveGymOwnerRegistration(long gymOwnerId) {
-        int result = 0;
-        try {
-            connection = DB_utils.getConnection();
-            System.out.println("Approving Gym Owner Requests...");
-            statement = connection.prepareStatement(Constants.APPROVE_GYM_OWNER);
-            statement.setLong(1, gymOwnerId);
-            result = statement.executeUpdate();
-            statement.close();
-        } catch (Exception excep) {
-            System.out.println(excep.getMessage());
-        }
-        if(result == 1){
-            return true;
-        }
-        return false;
-    }
-
-    public boolean approveGymRegistration(long gymCenterId){
-        int result = 0;
-        try{
-            connection = DB_utils.getConnection();
-            System.out.println("Approving Gym Center Requests...");
-            statement = connection.prepareStatement(Constants.APPROVE_GYM_CENTER);
-            statement.setLong(1,gymCenterId);
-            result = statement.executeUpdate();
-            statement.close();
-        } catch(Exception e) {
-            System.out.println(e.getMessage());
-        }
-        if(result == 1){
-            return true;
-        }
-        return false;
-    }
-
-    public void addAdmin(GymAdmin gymAdmin){
-        try{
-            connection = DB_utils.getConnection();
-            statement = connection.prepareStatement(Constants.ADD_ADMIN);
-            statement.setString(1,gymAdmin.getAdminName());
-            statement.setString(2,gymAdmin.getAdminEmailAddress());
-            statement.setString(3,gymAdmin.getPhone());
-            statement.setString(4,gymAdmin.getPassword());
-            statement.executeUpdate();
-            statement.close();
-
-            UserRole userRole = new UserRole();
-            userRole.setUserId(getAdminByEmail(gymAdmin.getAdminEmailAddress()).getAdminId());
-            userRole.setUserRole(UserRoleType.ADMIN);
-            userRole.setUserEmail(gymAdmin.getAdminEmailAddress());
-
-            userDao.addUserRole(userRole);
-            System.out.println("Added Admin Successfully");
-            return;
-        }catch (Exception e){
-            System.out.println(e.getMessage());
-        }
-        System.out.println("Add Admin Failed");
     }
 
     @Override
     public GymAdmin getAdminByEmail(String email) {
-        try{
-            connection = DB_utils.getConnection();
-            statement = connection.prepareStatement(Constants.GET_ADMIN_BY_EMAIL);
-            statement.setString(1, email);
-            ResultSet resultSet = statement.executeQuery();
-            if(resultSet.next()){
-                GymAdmin gymAdmin=new GymAdmin();
-                gymAdmin.setAdminId(resultSet.getLong("admin_id"));
-                gymAdmin.setAdminName(resultSet.getString("admin_name"));
-                gymAdmin.setAdminEmailAddress(resultSet.getString("admin_email_id"));
-                gymAdmin.setPhone(resultSet.getString("admin_phone_no"));
-                gymAdmin.setPassword(resultSet.getString("admin_password"));
-                return gymAdmin;
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_ADMIN_BY_EMAIL);
+            stmt.setString(1, email);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapAdminResultSet(rs);
             }
-        }catch (Exception e){
-            System.out.println(e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
         }
-        System.out.println("Get Admin By Email failed");
         return null;
     }
 
+    @Override
+    public GymAdmin authenticate(String email, String password) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.AUTHENTICATE_ADMIN);
+            stmt.setString(1, email);
+            stmt.setString(2, password);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return mapAdminResultSet(rs);
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return null;
+    }
 
+    // ==================== GYM OWNER APPROVAL ====================
+
+    @Override
+    public List<GymOwner> viewPendingGymOwnerRequests() {
+        List<GymOwner> owners = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_PENDING_GYM_OWNERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                owners.add(mapOwnerResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return owners;
+    }
+
+    @Override
+    public List<GymOwner> viewAllApprovedGymOwners() {
+        List<GymOwner> owners = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_APPROVED_GYM_OWNERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                owners.add(mapOwnerResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return owners;
+    }
+
+    @Override
+    public boolean approveGymOwner(Long gymOwnerId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.APPROVE_GYM_OWNER);
+            stmt.setLong(1, gymOwnerId);
+            int rows = stmt.executeUpdate();
+            stmt.close();
+            return rows > 0;
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    @Override
+    public boolean rejectGymOwner(Long gymOwnerId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.REJECT_GYM_OWNER);
+            stmt.setLong(1, gymOwnerId);
+            int rows = stmt.executeUpdate();
+            stmt.close();
+            return rows > 0;
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ==================== GYM CENTER APPROVAL ====================
+
+    @Override
+    public List<GymCenter> viewPendingGymCenters() {
+        List<GymCenter> centers = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_PENDING_GYM_CENTERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                centers.add(mapCenterResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return centers;
+    }
+
+    @Override
+    public List<GymCenter> viewAllApprovedGymCenters() {
+        List<GymCenter> centers = new ArrayList<>();
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.GET_ALL_APPROVED_GYM_CENTERS);
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                centers.add(mapCenterResultSet(rs));
+            }
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return centers;
+    }
+
+    @Override
+    public boolean approveGymCenter(Long gymCenterId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.APPROVE_GYM_CENTER);
+            stmt.setLong(1, gymCenterId);
+            int rows = stmt.executeUpdate();
+            stmt.close();
+            return rows > 0;
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    @Override
+    public boolean rejectGymCenter(Long gymCenterId) {
+        try {
+            Connection connection = DB_utils.getConnection();
+            PreparedStatement stmt = connection.prepareStatement(Constants.REJECT_GYM_CENTER);
+            stmt.setLong(1, gymCenterId);
+            int rows = stmt.executeUpdate();
+            stmt.close();
+            return rows > 0;
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+        return false;
+    }
+
+    // ==================== HELPER METHODS ====================
+
+    private GymAdmin mapAdminResultSet(ResultSet rs) throws Exception {
+        GymAdmin admin = new GymAdmin();
+        admin.setAdminId(rs.getLong("admin_id"));
+        admin.setAdminName(rs.getString("name"));
+        admin.setAdminEmailAddress(rs.getString("email"));
+        admin.setPhone(rs.getString("phone"));
+        admin.setPassword(rs.getString("password"));
+        return admin;
+    }
+
+    private GymOwner mapOwnerResultSet(ResultSet rs) throws Exception {
+        GymOwner owner = new GymOwner();
+        owner.setOwnerId(rs.getLong("owner_id"));
+        owner.setOwnerName(rs.getString("name"));
+        owner.setOwnerEmailAddress(rs.getString("email"));
+        owner.setOwnerPhone(rs.getString("phone"));
+        owner.setOwnerPanNum(rs.getString("pan_number"));
+        owner.setOwnerAddress(rs.getString("address"));
+        owner.setPassword(rs.getString("password"));
+        owner.setApproved(rs.getBoolean("is_approved"));
+        return owner;
+    }
+
+    private GymCenter mapCenterResultSet(ResultSet rs) throws Exception {
+        GymCenter center = new GymCenter();
+        center.setId(rs.getLong("center_id"));
+        center.setName(rs.getString("name"));
+        center.setCity(rs.getString("city"));
+        center.setLocation(rs.getString("location"));
+        center.setCapacity(rs.getInt("capacity"));
+        center.setStatus(rs.getString("status"));
+        center.setGymOwnerId(rs.getLong("owner_id"));
+        return center;
+    }
 }

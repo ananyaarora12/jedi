@@ -1,51 +1,80 @@
 package com.flipkart.business;
 
-import com.flipkart.bean.Customer;
+import com.flipkart.DAO.WaitlistDAO;
+import com.flipkart.DAO.WaitlistDAOInterface;
 import com.flipkart.bean.WaitingList;
 
-import java.util.LinkedList;
-import java.util.Queue;
+import java.util.List;
 
+/**
+ * WaitlistOperation - Business logic for waitlist management
+ * 
+ * From Activity Diagram (Customer):
+ * - "Add User to Waitlist" when no seats available
+ * - "Check Waitlist for Slot" when booking cancelled
+ * - "Select first user in queue (FIFO)"
+ */
 public class WaitlistOperation {
 
-    // Create a WaitingList object to manage the waiting list
-    WaitingList waitingList = new WaitingList();
+    private WaitlistDAOInterface waitlistDAO = new WaitlistDAO();
 
-    // Method to initialize the waiting list with a specific waitlist ID, centre ID, and slot ID
-    public void initializeWaitingList(long waitListId, long centreId, int slotId) {
-        // Set the properties of the waiting list
-        waitingList.setWaitListId(waitListId);
-        waitingList.setCentreId(centreId);
-        waitingList.setSlotId(slotId);
-        // Initialize an empty queue for the waiting list
-        waitingList.setWaiting(new LinkedList<>());
-        // Log that the waiting list has been initialized with the provided IDs
-        System.out.println("initializeWaitingList() called: Waiting list initialized with ID: " + waitListId + ", Centre ID: " + centreId + ", Slot ID: " + slotId);
+    /**
+     * Add a customer to the waitlist for a specific slot
+     */
+    public void addToWaitlist(Long customerId, Long slotId) {
+        WaitingList entry = new WaitingList();
+        entry.setCustomerId(customerId);
+        entry.setSlotId(slotId);
+        waitlistDAO.addToWaitlist(entry);
+        System.out.println("Customer added to waitlist for slot: " + slotId);
     }
 
-    // Method to add a customer to the waiting list
-    public void addCustomerToWaitlist(Customer customer) {
-        // Add the customer to the waiting list (this would be modified to actually add the customer to the queue)
-        System.out.println("addCustomerToWaitlist() called: Customer " + customer.getCustomerName() + " added to the waiting list.");
+    /**
+     * Get the first customer in the waitlist (FIFO)
+     */
+    public WaitingList getNextInQueue(Long slotId) {
+        return waitlistDAO.getFirstInWaitlist(slotId);
     }
 
-    // Method to serve the next customer in the waiting list
-    public void serveNextCustomer(Customer customer) {
-        // Serve the next customer (this should ideally pop from the waiting list queue)
-        System.out.println("serveNextCustomer() called: Customer " + customer.getCustomerName() + " has been served.");
+    /**
+     * View the entire waitlist for a slot
+     */
+    public List<WaitingList> viewWaitlist(Long slotId) {
+        return waitlistDAO.getWaitlistBySlot(slotId);
     }
 
-    // Method to view the current status of the waiting list
-    public void viewWaitingList() {
-        // Print the current state of the waiting list (this would be expanded to display actual data)
-        System.out.println("viewWaitingList() called: Current waiting list: ");
+    /**
+     * Check if waitlist is empty for a slot
+     */
+    public boolean isWaitlistEmpty(Long slotId) {
+        return waitlistDAO.getWaitlistCount(slotId) == 0;
     }
 
-    // Method to check if the waiting list is empty
-    public boolean isWaitingListEmpty() {
-        // Log that the waiting list is being checked if it’s empty
-        System.out.println("waitinglist is empty");
-        // Return true for simplicity; this would be modified to return the actual status of the waiting list
-        return true;
+    /**
+     * Get waitlist count for a slot
+     */
+    public int getWaitlistCount(Long slotId) {
+        return waitlistDAO.getWaitlistCount(slotId);
+    }
+
+    /**
+     * Remove a customer from the waitlist
+     */
+    public void removeFromWaitlist(Long waitlistId) {
+        waitlistDAO.removeFromWaitlist(waitlistId);
+    }
+
+    /**
+     * Check if customer is already in waitlist
+     */
+    public boolean isCustomerInWaitlist(Long customerId, Long slotId) {
+        return waitlistDAO.isCustomerInWaitlist(customerId, slotId);
+    }
+
+    /**
+     * Get customer's position in the waitlist
+     */
+    public int getCustomerPosition(Long customerId, Long slotId) {
+        return waitlistDAO.getCustomerPosition(customerId, slotId);
     }
 }

@@ -1,117 +1,131 @@
 package com.flipkart.business;
 
-import com.flipkart.DAO.AdminDao;
+import com.flipkart.DAO.*;
 import com.flipkart.bean.*;
 import com.flipkart.exceptions.UserNotFoundException;
+import com.flipkart.utils.NotificationType;
 
-import java.util.List;
+import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
+/**
+ * AdminOperation - Business logic for Admin
+ * 
+ * From Activity Diagram (Admin):
+ * 1. "Log in to FlipFit Admin" -> "Authenticate Credentials"
+ * 2. "Fetch Gym Owner Requests"
+ * 3. "View Pending Centers"
+ * 4. "Approve?" [yes] -> "Save Center & Slot Info"
+ * 5. "Approve?" [no] -> "Delete Centre" -> "Cascading Delete" -> "Send rejection notification"
+ */
 public class AdminOperation {
 
-    // Lists to store pending gym owners and gym centers
-    private List<GymOwner> pendinGymOwnerList = new ArrayList<>();
-    private List<GymCenter> pendinGymCentreList = new ArrayList<>();
-    
-    // DAO instance to handle database operations
-    public AdminDao adminDao = new AdminDao();
-    
-    /**
-     * Creates a new GymAdmin object with the provided details.
-     * @param adminName Name of the admin
-     * @param adminEmail Email address of the admin
-     * @param adminPhone Contact number of the admin
-     * @param password Password for admin login
-     * @return A GymAdmin object containing the given details
-     */
-    public GymAdmin createAdmin( String adminName, String adminEmail, String adminPhone, String password) {
+    private AdminDaoInterface adminDao = new AdminDao();
+    private NotificationDaoInterface notificationDAO = new NotificationDao();
+    private GymCenterDAOInterface gymCenterDAO = new GymCenterDAO();
+
+    public GymAdmin createAdmin(String name, String email, String phone, String password) {
         GymAdmin admin = new GymAdmin();
-        admin.setAdminName(adminName);
-        admin.setAdminEmailAddress(adminEmail);
-        admin.setPhone(adminPhone);
+        admin.setAdminName(name);
+        admin.setAdminEmailAddress(email);
+        admin.setPhone(phone);
         admin.setPassword(password);
         adminDao.addAdmin(admin);
         return admin;
     }
 
-    // 1 - Approve requests
-    // 2 - View pending and approved requests
-    
-    /**
-     * Approves a gym owner registration request.
-     * @param ownerId Unique ID of the gym owner
-     * @return true if approved successfully
-     */
-    public boolean approveGymOwner(long ownerId) {
-        System.out.println("Owner with ID: " + ownerId + " is approved");
-        adminDao.approveGymOwnerRegistration(ownerId);
-        return true;
+    public boolean validUser(String email, String password) throws UserNotFoundException {
+        GymAdmin admin = adminDao.getAdminByEmail(email);
+        if (Objects.isNull(admin) || Objects.isNull(admin.getAdminId())) {
+            throw new UserNotFoundException(email);
+        }
+        return Objects.equals(admin.getPassword(), password);
     }
-    
-    /**
-     * Approves a gym center registration request.
-     * @param centerId Unique ID of the gym center
-     * @return true if approved successfully
-     */
-    public boolean approveGymCenter(long centerId) {
-        adminDao.approveGymRegistration(centerId);
-        System.out.println("Center with ID: " + centerId + " is approved");
-        return true;
+
+    public GymAdmin getAdminByEmail(String email) {
+        return adminDao.getAdminByEmail(email);
     }
+
+    // ==================== GYM OWNER APPROVAL ====================
     
-    /**
-     * Retrieves a list of pending gym center registration requests.
-     * @return List of GymCenter objects that are pending approval
-     */
-    public List<GymCenter> viewPendingGymCentres() {
-        return adminDao.viewPendingGymRequests();
-    }
-    
-    /**
-     * Retrieves a list of pending gym owner registration requests.
-     * @return List of GymOwner objects that are pending approval
-     */
     public List<GymOwner> viewPendingGymOwners() {
         return adminDao.viewPendingGymOwnerRequests();
     }
-    
-    /**
-     * Retrieves a list of approved gym owners.
-     * @return List of GymOwner objects that have been approved
-     */
+
     public List<GymOwner> viewApprovedGymOwners() {
-        return adminDao.viewAllApprovedGymOnwers();
+        return adminDao.viewAllApprovedGymOwners();
     }
-    
-    /**
-     * Retrieves a list of approved gym centers.
-     * @return List of GymCenter objects that have been approved
-     */
-    public List<GymCenter> viewApprovedGymCentres() {
-        return adminDao.viewAllApprovedGyms();
+
+    public List<GymOwner> filterGymOwnersByApproval(boolean approved) {
+        List<GymOwner> allOwners = new ArrayList<>();
+        allOwners.addAll(adminDao.viewPendingGymOwnerRequests());
+        allOwners.addAll(adminDao.viewAllApprovedGymOwners());
+        return allOwners.stream()
+            .filter(owner -> owner.isApproved() == approved)
+            .collect(Collectors.toList());
     }
-    
-    /**
-     * Validates an admin user's login credentials.
-     * @param adminEmail Email address of the admin
-     * @param password Password entered by the admin
-     * @return true if credentials are valid (TODO: Implement verification logic)
-     */
-    public boolean validUser(String adminEmail, String password) throws UserNotFoundException {
-        GymAdmin gymAdmin = getAdminByEmail(adminEmail);
-        if(Objects.isNull(gymAdmin)) {
-            throw new UserNotFoundException();
+
+    public boolean approveGymOwner(long ownerId) {
+        boolean approved = adminDao.approveGymOwner(ownerId);
+        if (approved) {
+            sendNotification(ownerId, "Your gym owner registration has been approved!", NotificationType.GYM_APPROVED);
         }
-        return Objects.nonNull(gymAdmin.getPassword()) && Objects.equals(gymAdmin.getPassword(), password);
+        return approved;
     }
+
+    public boolean rejectGymOwner(long ownerId) {
+        sendNotification(ownerId, "Your gym owner registration has been rejected.", NotificationType.GYM_REJECTED);
+        return adminDao.rejectGymOwner(ownerId);
+    }
+
+    // ==================== GYM CENTER APPROVAL ====================
     
-    /**
-     * Retrieves admin details based on email.
-     * @param email Email address of the admin
-     * @return A GymAdmin object with pre-set details (TODO: Fetch from database)
-     */
-    public GymAdmin getAdminByEmail(String email) {
-        return adminDao.getAdminByEmail(email);
+    public List<GymCenter> viewPendingGymCentres() {
+        return adminDao.viewPendingGymCenters();
+    }
+
+    public List<GymCenter> viewApprovedGymCentres() {
+        return adminDao.viewAllApprovedGymCenters();
+    }
+
+    public List<GymCenter> filterGymCentersByApproval(boolean approved) {
+        List<GymCenter> allCenters = new ArrayList<>();
+        allCenters.addAll(adminDao.viewPendingGymCenters());
+        allCenters.addAll(adminDao.viewAllApprovedGymCenters());
+        return allCenters.stream()
+            .filter(center -> approved == "APPROVED".equalsIgnoreCase(center.getStatus()))
+            .collect(Collectors.toList());
+    }
+
+    public boolean approveGymCenter(long centerId) {
+        boolean approved = adminDao.approveGymCenter(centerId);
+        if (approved) {
+            GymCenter center = gymCenterDAO.getGymCenterById(centerId);
+            if (center != null) {
+                sendNotification(center.getGymOwnerId(), "Your gym center '" + center.getName() + "' has been approved!", NotificationType.GYM_APPROVED);
+            }
+        }
+        return approved;
+    }
+
+    public boolean rejectGymCenter(long centerId) {
+        GymCenter center = gymCenterDAO.getGymCenterById(centerId);
+        if (center != null) {
+            sendNotification(center.getGymOwnerId(), "Your gym center '" + center.getName() + "' has been rejected.", NotificationType.GYM_REJECTED);
+        }
+        return adminDao.rejectGymCenter(centerId);
+    }
+
+    private void sendNotification(Long userId, String message, NotificationType type) {
+        Notification notification = new Notification();
+        notification.setUserId(userId);
+        notification.setMessage(message);
+        notification.setType(type.toString());
+        notification.setRead(false);
+        notification.setCreatedAt(new Timestamp(System.currentTimeMillis()));
+        notificationDAO.createNotification(notification);
     }
 }

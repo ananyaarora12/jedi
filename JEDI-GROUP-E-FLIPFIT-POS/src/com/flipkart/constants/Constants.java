@@ -1,57 +1,210 @@
 package com.flipkart.constants;
 
+/**
+ * Constants - SQL Queries organized by entity
+ * Based on Activity Diagrams: Admin, GymOwner, Customer
+ */
 public class Constants {
-	
 
-	public static final String FETCH_ALL_SLOTS_OF_GYM = "SELECT * FROM jedi_flipfit_mysql.slots WHERE center_id=? and available_seats>0";
-	public static final String FETCH_GYMOWNER_DETAILS = "SELECT * FROM GymOwner WHERE email=?";
-	public static final String FETCH_GYMOWNER_ALL_GYMS = "SELECT * FROM GymCenter WHERE gymOwnerEmail=?";
-	public static final String FETCH_GYM_OWNER_BY_EMAIL_ID = "SELECT * FROM jedi_flipfit_mysql.gym_owner WHERE owner_email_id=?";
-	public static final String INSERT_GYM = "INSERT INTO jedi_flipfit_mysql.gym_center (center_name,center_email_id,is_approved,center_location,owner_id) values (?, ?, ?, ?, ?)";
+    // ==================== CUSTOMER QUERIES ====================
+    // Activity: "Sign up", "Login", "Select City"
+    
+    public static final String ADD_CUSTOMER = 
+        "INSERT INTO customer (name, email, phone, password, city, address) VALUES (?, ?, ?, ?, ?, ?)";
+    
+    public static final String GET_CUSTOMER_BY_EMAIL = 
+        "SELECT * FROM customer WHERE email = ?";
+    
+    public static final String GET_CUSTOMER_BY_ID = 
+        "SELECT * FROM customer WHERE customer_id = ?";
+    
+    public static final String AUTHENTICATE_CUSTOMER = 
+        "SELECT * FROM customer WHERE email = ? AND password = ?";
 
-	public static final String CREATE_SLOT = "INSERT INTO Slot (id, time) values(?, ?)";
-	public static final String INSERT_SLOT = "INSERT INTO jedi_flipfit_mysql.slots (center_id, slot_timings, slot_price,available_seats) values(?, ?, ?,?)";
-	public static final String INSERT_BOOKEDSLOT = "INSERT INTO BookedSlot (gymCenterId, slotId, customerEmail, date, isActive) values(?, ?, ?, ?, ?)";
-	public static final String FETCH_GYMOWNER_ALL_APPROVED_GYMS = "SELECT * FROM GymCenter WHERE gymOwnerEmail=? and isApproved=1";
-	public static final String CHECK_GYMOWNER_APPROVEVAL = "SELECT * FROM GymOwner WHERE email=? and isApproved=1";
-	public static final String CHECK_GYMCENTER_APPROVEVAL = "SELECT * FROM GymCenter WHERE id=? and isApproved=1";
-	public static final String FETCH_ALL_BOOKEDSLOTS = "SELECT * FROM BookedSlot WHERE customerEmail=? and isActive=?";
-	public static final String CHECK_SLOT_ALREADY_BOOKED = "SELECT * FROM BookedSlot WHERE slotId=? and customerEmail=? and date=?";
-	public static final String CANCEL_BOOKING = "UPDATE BookedSlot SET isActive = ? where id = ? and customerEmail = ?";
-	public static final String INCREASE_SEAT = "UPDATE jedi_flipfit_mysql.slots SET available_seats=available_seats+1 where slot_id=?;";
-	public static final String DECREASE_SEAT = "UPDATE jedi_flipfit_mysql.slots SET available_seats=available_seats-1 where slot_id=?;";
-	public static final String GET_SLOT_BY_ID = "SELECT * FROM jedi_flipfit_mysql.slots WHERE slot_id=?";
-	
-	
-	public static final String FETCH_PENDING_GYM_CENTERS = "SELECT * FROM gym_center WHERE is_approved = 0;";
-	
-	public static final String FETCH_PENDING_GYM_OWNERS = "SELECT * FROM gym_owner WHERE is_approved = 0";
-	
-	public static final String FETCH_PENDING_OR_APPROVED_GYM_OWNERS= "SELECT * FROM gym_owner";
-	
-	public static final String FETCH_ALL_APPROVED_GYMS = "SELECT * FROM gym_center WHERE is_approved=1";
-	
-	public static final String APPROVE_GYM_OWNER = "UPDATE gym_owner SET is_approved = true WHERE owner_id = ?";
-	
-	public static final String APPROVE_GYM_CENTER = "UPDATE gym_center SET is_approved = 1 WHERE center_id = ?";
-	public static final String REGISTERING_NEW_CUSTOMER = "INSERT INTO jedi_flipfit_mysql.Customer (customer_name,customer_address,customer_email_id,customer_phone_no,customer_password) VALUES ( ?, ?, ?, ?, ?);";
-	public static final String REGISTERING_NEW_GYMOWNER = "INSERT INTO GymOwner (name,address,email,phone,gstNumber,isApproved) VALUES (?, ?, ?, ?, ?, ?)";
-	public static final String REGISTERING_NEW_USER = "INSERT INTO User (email,password,roleId) VALUES (?, ?, ?)";
-	public static final String FETCH_ALL_CUSTOMERS_USERS = "SELECT * FROM User WHERE roleId = ?";
-	public static final String MAKE_PAYMENT = "INSERT INTO Payment (cardNumber, customerEmail) values(?, ?)";
-	public static final String AUTHENTICATE_USER = "SELECT * FROM User Where email=? and password = ? and roleId=?";
-	public static final String FETCH_CUSTOMER_BY_EMAIL = "SELECT * from jedi_flipfit_mysql.Customer where customer_email_id=?";
-	public static final String FETCH_BOOKINGS_BY_CUSTOMER_ID = "SELECT * from jedi_flipfit_mysql.book_slot where customer_id=?;";
-	public static final String ADD_SLOT_BOOKING = "INSERT INTO jedi_flipfit_mysql.book_slot(customer_id,slot_id,booking_date,booking_status) VALUES(?,?,?,?)";
-	public static final String DELETE_SLOT_BOOKING = "DELETE FROM jedi_flipfit_mysql.book_slot WHERE customer_id = ? AND slot_id = ?;";
-	public static final String FETCH_ALL_GYM_CENTERS = "SELECT * from jedi_flipfit_mysql.gym_center WHERE is_approved=1";
-	public static final String INSERT_USER_ROLE = "INSERT INTO jedi_flipfit_mysql.user_role (user_id,user_role,user_email) VALUES (?,?,?)";
-	public static final String ADD_ADMIN = "INSERT INTO jedi_flipfit_mysql.gym_admin (admin_name, admin_email_id, admin_phone_no, admin_password) VALUES (?,?,?,?)";
-	public static final String GET_ADMIN_BY_EMAIL = "SELECT * from jedi_flipfit_mysql.gym_admin where admin_email_id=?";
-	public static final String ADD_GYM_OWNER = "INSERT INTO jedi_flipfit_mysql.gym_owner (owner_name, owner_id,owner_pan,owner_phone_no,owner_address,is_approved,owner_email_id,password) VALUES (?,?,?,?,?,?,?,?)";
-	public static final String GET_FEEDBACK = "SELECT * FROM feedback";
-	public static final String GET_FEEDBACK_BY_USERID = "SELECT * FROM feedback WHERE userId = ?";
-	public static final String ADD_FEEDBACK = "INSERT INTO feedback (userId, comments, rating, centreId) VALUES (?, ?, ?, ?)";
-	public static final String GET_USER_ROLE = "SELECT user_id, user_role FROM jedi_flipfit_mysql.user_role WHERE user_email = ?";
-	public static final String GET_ALL_GYM_BOOKINGS = "SELECT * from jedi_flipfit_mysql.book_slot where ";
+    // ==================== GYM OWNER QUERIES ====================
+    // Activity: "Sign up", "Login", "Add a new centre"
+    
+    public static final String ADD_GYM_OWNER = 
+        "INSERT INTO gym_owner (name, email, phone, pan_number, address, password, is_approved) VALUES (?, ?, ?, ?, ?, ?, 0)";
+    
+    public static final String GET_GYM_OWNER_BY_EMAIL = 
+        "SELECT * FROM gym_owner WHERE email = ?";
+    
+    public static final String GET_GYM_OWNER_BY_ID = 
+        "SELECT * FROM gym_owner WHERE owner_id = ?";
+    
+    public static final String AUTHENTICATE_GYM_OWNER = 
+        "SELECT * FROM gym_owner WHERE email = ? AND password = ?";
+    
+    public static final String GET_PENDING_GYM_OWNERS = 
+        "SELECT * FROM gym_owner WHERE is_approved = 0";
+    
+    public static final String GET_APPROVED_GYM_OWNERS = 
+        "SELECT * FROM gym_owner WHERE is_approved = 1";
+    
+    public static final String APPROVE_GYM_OWNER = 
+        "UPDATE gym_owner SET is_approved = 1 WHERE owner_id = ?";
+    
+    public static final String REJECT_GYM_OWNER = 
+        "DELETE FROM gym_owner WHERE owner_id = ?";
+
+    // ==================== ADMIN QUERIES ====================
+    // Activity: "Log in to FlipFit Admin", "Authenticate Credentials"
+    
+    public static final String ADD_ADMIN = 
+        "INSERT INTO gym_admin (name, email, phone, password) VALUES (?, ?, ?, ?)";
+    
+    public static final String GET_ADMIN_BY_EMAIL = 
+        "SELECT * FROM gym_admin WHERE email = ?";
+    
+    public static final String AUTHENTICATE_ADMIN = 
+        "SELECT * FROM gym_admin WHERE email = ? AND password = ?";
+
+    // ==================== GYM CENTER QUERIES ====================
+    // Activity: "Add a new centre", "View Pending Centers", "Approve?"
+    
+    public static final String ADD_GYM_CENTER = 
+        "INSERT INTO gym_center (name, city, location, capacity, status, owner_id) VALUES (?, ?, ?, ?, 'PENDING', ?)";
+    
+    public static final String GET_GYM_CENTER_BY_ID = 
+        "SELECT * FROM gym_center WHERE center_id = ?";
+    
+    // Activity: "Select City" -> "Fetch Active Centers List"
+    public static final String GET_APPROVED_GYM_CENTERS_BY_CITY = 
+        "SELECT * FROM gym_center WHERE city = ? AND status = 'APPROVED'";
+    
+    public static final String GET_ALL_APPROVED_GYM_CENTERS = 
+        "SELECT * FROM gym_center WHERE status = 'APPROVED'";
+    
+    // Activity: "View Pending Centers"
+    public static final String GET_PENDING_GYM_CENTERS = 
+        "SELECT * FROM gym_center WHERE status = 'PENDING'";
+    
+    // Activity: "Approve?" -> "Save Center & Slot Info"
+    public static final String APPROVE_GYM_CENTER = 
+        "UPDATE gym_center SET status = 'APPROVED' WHERE center_id = ?";
+    
+    // Activity: "Approve?" [no] -> "Delete Centre"
+    public static final String REJECT_GYM_CENTER = 
+        "UPDATE gym_center SET status = 'REJECTED' WHERE center_id = ?";
+    
+    public static final String DELETE_GYM_CENTER = 
+        "DELETE FROM gym_center WHERE center_id = ?";
+    
+    public static final String GET_GYM_CENTERS_BY_OWNER = 
+        "SELECT * FROM gym_center WHERE owner_id = ?";
+
+    // ==================== SLOT QUERIES ====================
+    // Activity: "Configure Slots and Capacity", "Choose Date & Time Slot"
+    
+    public static final String ADD_SLOT = 
+        "INSERT INTO slot (center_id, date, start_time, end_time, total_seats, available_seats, price) VALUES (?, ?, ?, ?, ?, ?, ?)";
+    
+    public static final String GET_SLOT_BY_ID = 
+        "SELECT * FROM slot WHERE slot_id = ?";
+    
+    // Activity: "Choose Date & Time Slot"
+    public static final String GET_SLOTS_BY_CENTER_AND_DATE = 
+        "SELECT * FROM slot WHERE center_id = ? AND date = ?";
+    
+    public static final String GET_AVAILABLE_SLOTS_BY_CENTER = 
+        "SELECT * FROM slot WHERE center_id = ? AND available_seats > 0";
+    
+    public static final String GET_ALL_SLOTS_BY_CENTER = 
+        "SELECT * FROM slot WHERE center_id = ?";
+
+    // Activity: "Check Existing Bookings for Date"
+    public static final String GET_BOOKED_SLOTS_BY_CUSTOMER_AND_DATE = 
+        "SELECT s.* FROM slot s JOIN booking b ON b.slot_id = s.slot_id WHERE b.customer_id = ? AND b.status = 'CONFIRMED' AND b.slot_date = ?";
+    
+    // Activity: "Decrement Seat Count", "Increment Seat Count"
+    public static final String DECREMENT_SEAT_COUNT = 
+        "UPDATE slot SET available_seats = available_seats - 1 WHERE slot_id = ? AND available_seats > 0";
+    
+    public static final String INCREMENT_SEAT_COUNT = 
+        "UPDATE slot SET available_seats = available_seats + 1 WHERE slot_id = ?";
+    
+    public static final String DELETE_SLOT = 
+        "DELETE FROM slot WHERE slot_id = ?";
+
+    // ==================== BOOKING QUERIES ====================
+    // Activity: "Create Booking Record", "Delete Booking", "View My Plan"
+    
+    public static final String ADD_BOOKING = 
+        "INSERT INTO booking (customer_id, slot_id, slot_date, status, booked_at) VALUES (?, ?, ?, ?, ?)";
+    
+    public static final String GET_BOOKING_BY_ID = 
+        "SELECT * FROM booking WHERE booking_id = ?";
+    
+    // Activity: "View My Plan"
+    public static final String GET_BOOKINGS_BY_CUSTOMER = 
+        "SELECT * FROM booking WHERE customer_id = ? ORDER BY slot_date DESC";
+
+    public static final String GET_BOOKINGS_BY_CUSTOMER_AND_DATE = 
+        "SELECT * FROM booking WHERE customer_id = ? AND slot_date = ? ORDER BY slot_date DESC";
+    
+    // Activity: "Initiate Conflict Check"
+    public static final String CHECK_BOOKING_CONFLICT = 
+        "SELECT * FROM booking WHERE customer_id = ? AND slot_id = ? AND status = 'CONFIRMED'";
+
+    public static final String CHECK_BOOKING_CONFLICT_BY_TIME = 
+        "SELECT b.* FROM booking b JOIN slot s ON b.slot_id = s.slot_id WHERE b.customer_id = ? AND b.status = 'CONFIRMED' AND b.slot_date = ? AND s.start_time = ? AND s.end_time = ? LIMIT 1";
+    
+    // Activity: "Change status from Waitlisted to Confirmed"
+    public static final String UPDATE_BOOKING_STATUS = 
+        "UPDATE booking SET status = ? WHERE booking_id = ?";
+    
+    public static final String CANCEL_BOOKING = 
+        "UPDATE booking SET status = 'CANCELLED' WHERE booking_id = ?";
+    
+    public static final String DELETE_BOOKING = 
+        "DELETE FROM booking WHERE booking_id = ?";
+
+    // ==================== WAITLIST QUERIES ====================
+    // Activity: "Add User to Waitlist", "Check Waitlist for Slot", "Select first user in queue (FIFO)"
+    
+    public static final String ADD_TO_WAITLIST = 
+        "INSERT INTO waitlist (customer_id, slot_id, position, added_at) VALUES (?, ?, ?, ?)";
+    
+    public static final String GET_WAITLIST_COUNT = 
+        "SELECT COUNT(*) FROM waitlist WHERE slot_id = ?";
+    
+    // Activity: "Select first user in queue (FIFO)"
+    public static final String GET_FIRST_IN_WAITLIST = 
+        "SELECT * FROM waitlist WHERE slot_id = ? ORDER BY position ASC LIMIT 1";
+    
+    public static final String GET_WAITLIST_BY_SLOT = 
+        "SELECT * FROM waitlist WHERE slot_id = ? ORDER BY position ASC";
+    
+    public static final String REMOVE_FROM_WAITLIST = 
+        "DELETE FROM waitlist WHERE waitlist_id = ?";
+    
+    public static final String UPDATE_WAITLIST_POSITIONS = 
+        "UPDATE waitlist SET position = position - 1 WHERE slot_id = ? AND position > ?";
+    
+    public static final String CHECK_CUSTOMER_IN_WAITLIST = 
+        "SELECT * FROM waitlist WHERE customer_id = ? AND slot_id = ?";
+
+    // ==================== NOTIFICATION QUERIES ====================
+    // Activity: "Send rejection notification", "Promotion Notification", "Generate Success Notification"
+    
+    public static final String ADD_NOTIFICATION = 
+        "INSERT INTO notification (user_id, message, type, is_read, created_at) VALUES (?, ?, ?, 0, ?)";
+    
+    public static final String GET_NOTIFICATIONS_BY_USER = 
+        "SELECT * FROM notification WHERE user_id = ? ORDER BY created_at DESC";
+    
+    public static final String GET_UNREAD_NOTIFICATIONS = 
+        "SELECT * FROM notification WHERE user_id = ? AND is_read = 0";
+    
+    public static final String MARK_NOTIFICATION_READ = 
+        "UPDATE notification SET is_read = 1 WHERE notification_id = ?";
+
+    // ==================== USER ROLE QUERIES ====================
+    
+    public static final String ADD_USER_ROLE = 
+        "INSERT INTO user_role (user_id, user_role, user_email) VALUES (?, ?, ?)";
+    
+    public static final String GET_USER_ROLE_BY_EMAIL = 
+        "SELECT * FROM user_role WHERE user_email = ?";
 }
